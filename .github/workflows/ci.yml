@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Start job timer
+        working-directory: .
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: |
+          install_start=$(date +%s)
+          npm ci
+          echo "INSTALL_DURATION=$(( $(date +%s) - install_start )) seconds" >> "$GITHUB_ENV"
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Run the built application
+        run: npm start
+
+      - name: Write timing summary
+        if: always()
+        working-directory: .
+        run: |
+          total_duration=$(( $(date +%s) - JOB_START ))
+          {
+            echo "| Metric | Value |"
+            echo "| --- | --- |"
+            echo "| Install duration | ${INSTALL_DURATION:-Not completed} |"
+            echo "| Total duration | $total_duration seconds |"
+            echo "| Cache | Not enabled |"
+          } >> "$GITHUB_STEP_SUMMARY"
