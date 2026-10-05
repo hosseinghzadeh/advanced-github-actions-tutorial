@@ -52,9 +52,7 @@ jobs:
         run: |
           total_duration=$(( $(date +%s) - JOB_START ))
           {
-            echo "| Metric | Value |"
-            echo "| --- | --- |"
-            echo "| Install duration | ${INSTALL_DURATION:-Not completed} |"
-            echo "| Total duration | $total_duration seconds |"
-            echo "| Cache | Not enabled |"
+            echo "| Job | Cache | Install duration | Total duration |"
+            echo "| --- | --- | --- | --- |"
+            echo "| build | Not enabled | ${INSTALL_DURATION:-Not completed} | $total_duration seconds |"
           } >> "$GITHUB_STEP_SUMMARY"
