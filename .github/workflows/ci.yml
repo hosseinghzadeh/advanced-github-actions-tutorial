@@ -25,6 +25,19 @@ jobs:
           node-version: '24'
           package-manager-cache: false
 
+      - name: Get npm cache directory
+        id: npm-cache
+        run: echo "dir=$(npm config get cache)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache npm downloads
+        id: cache-npm
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ runner.os }}-npm-node-24-${{ hashFiles('app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-node-24-
+
       - name: Install dependencies
         run: |
           install_start=$(date +%s)
@@ -49,10 +62,12 @@ jobs:
       - name: Write timing summary
         if: always()
         working-directory: .
+        env:
+          CACHE_STATUS: ${{ steps.cache-npm.outputs.cache-hit == 'true' && 'Hit' || 'Miss' }}
         run: |
           total_duration=$(( $(date +%s) - JOB_START ))
           {
             echo "| Job | Cache | Install duration | Total duration |"
             echo "| --- | --- | --- | --- |"
-            echo "| build | Not enabled | ${INSTALL_DURATION:-Not completed} | $total_duration seconds |"
+            echo "| build | $CACHE_STATUS | ${INSTALL_DURATION:-Not completed} | $total_duration seconds |"
           } >> "$GITHUB_STEP_SUMMARY"
