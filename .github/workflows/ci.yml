@@ -38,9 +38,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ steps.npm-cache.outputs.dir }}
-          key: ${{ runner.os }}-npm-node-${{ matrix.node-version }}-${{ hashFiles('app/package-lock.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('app/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-npm-node-${{ matrix.node-version }}-
+            ${{ runner.os }}-npm-
 
       - name: Install dependencies
         run: |
