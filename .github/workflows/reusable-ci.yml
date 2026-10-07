@@ -1,11 +1,14 @@
-name: CI
+name: Reusable CI
 
 on:
-  push:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: string
 
 jobs:
-  prepare:
+  build:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -19,10 +22,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup Node.js 24
+      - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: ${{ inputs.node-version }}
           package-manager-cache: false
 
       - name: Get npm cache directory
@@ -44,32 +47,31 @@ jobs:
           npm ci
           echo "INSTALL_DURATION=$(( $(date +%s) - install_start )) seconds" >> "$GITHUB_ENV"
 
-      - name: Save npm downloads
-        if: steps.cache-npm.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
-        with:
-          path: ${{ steps.npm-cache.outputs.dir }}
-          key: ${{ steps.cache-npm.outputs.cache-primary-key }}
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Run the built application
+        run: npm start
 
       - name: Write timing summary
         if: always()
         working-directory: .
         env:
+          NODE_VERSION: ${{ inputs.node-version }}
           CACHE_STATUS: ${{ steps.cache-npm.outputs.cache-hit == 'true' && 'Hit' || 'Miss' }}
         run: |
           total_duration=$(( $(date +%s) - JOB_START ))
           {
             echo "| Job | Cache | Install duration | Total duration |"
             echo "| --- | --- | --- | --- |"
-            echo "| prepare | $CACHE_STATUS | ${INSTALL_DURATION:-Not completed} | $total_duration seconds |"
+            echo "| build (Node $NODE_VERSION) | $CACHE_STATUS | ${INSTALL_DURATION:-Not completed} | $total_duration seconds |"
           } >> "$GITHUB_STEP_SUMMARY"
-
-  build:
-    needs: prepare
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22, 24, 26]
-    uses: ./.github/workflows/reusable-ci.yml
-    with:
-      node-version: ${{ format('{0}', matrix.node-version) }}
