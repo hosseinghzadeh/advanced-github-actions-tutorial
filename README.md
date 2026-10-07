@@ -314,7 +314,7 @@ Keep every existing install, lint, typecheck, test, build, and start step. Commi
             ${{ runner.os }}-npm-
 ```
 
-Commit and run CI. To observe a **cold** cache, first wait for earlier CI runs to finish, then open **Actions → Caches** in your own tutorial repository and delete entries starting with `Linux-npm-`. This also removes older fallback entries. [Managing caches](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manage-caches).
+Commit and run CI. To observe a **cold** cache, wait for earlier CI runs to finish, open **Actions → Caches** in your own tutorial repository, and delete entries starting with `Linux-npm-`. This also removes older fallback entries. Then start a **new CI run** through **Actions → CI → Run workflow** and inspect that new run as your cold-cache observation. [Managing caches](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manage-caches).
 
 **Expect:** All three jobs calculate the same key. On a cold parallel run, they may all miss, install independently, and attempt to create the same entry. A cache-save conflict warning is possible, not guaranteed.
 
