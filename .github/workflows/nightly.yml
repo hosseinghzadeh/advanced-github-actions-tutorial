@@ -1,0 +1,12 @@
+name: Nightly CI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *'
+
+jobs:
+  nightly:
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      node-version: '24'
