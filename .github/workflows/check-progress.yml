@@ -1,0 +1,55 @@
+name: Tutorial progress
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  check-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Report tutorial progress
+        shell: bash
+        run: |
+          # Exclude this checker so its own patterns do not count as progress.
+          workflows=$(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) ! -name 'check-progress.yml' -exec cat {} +)
+
+          step1='❌ Missing'
+          hint1='Add actions/cache and hashFiles for app/package-lock.json.'
+          if grep -qE 'uses: actions/cache(/restore|/save)?@' <<< "$workflows" &&
+             grep -qF "hashFiles('app/package-lock.json')" <<< "$workflows"; then
+            step1='✅ Done'
+            hint1='-'
+          fi
+
+          step2='❌ Missing'
+          hint2='Add the Node matrix, prepare job, needs: prepare, and a shared cache key.'
+          if grep -qF 'strategy:' .github/workflows/ci.yml 2>/dev/null &&
+             grep -qF 'matrix:' .github/workflows/ci.yml 2>/dev/null &&
+             grep -qF 'node-version: [22, 24, 26]' .github/workflows/ci.yml 2>/dev/null &&
+             grep -qE '^  prepare:' .github/workflows/ci.yml 2>/dev/null &&
+             grep -qF 'needs: prepare' .github/workflows/ci.yml 2>/dev/null &&
+             grep -qE '^[[:space:]]*key:.*runner\.os.*hashFiles' <<< "$workflows" &&
+             ! grep -qE '^[[:space:]]*key:.*matrix\.node-version' <<< "$workflows"; then
+            step2='✅ Done'
+            hint2='-'
+          fi
+
+          step3='❌ Missing'
+          hint3='Add workflow_call in reusable-ci.yml and call it from ci.yml or nightly.yml.'
+          if grep -qF 'workflow_call:' .github/workflows/reusable-ci.yml 2>/dev/null &&
+             grep -qF 'uses: ./.github/workflows/reusable-ci.yml' .github/workflows/ci.yml .github/workflows/nightly.yml 2>/dev/null; then
+            step3='✅ Done'
+            hint3='-'
+          fi
+
+          {
+            echo '| Tutorial step | Status | Hint |'
+            echo '| --- | --- | --- |'
+            echo "| Step 1 - Caching | $step1 | $hint1 |"
+            echo "| Step 2 - Matrix + shared cache | $step2 | $hint2 |"
+            echo "| Step 3 - Reusable workflow | $step3 | $hint3 |"
+          } >> "$GITHUB_STEP_SUMMARY"
