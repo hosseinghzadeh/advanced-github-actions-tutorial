@@ -517,7 +517,7 @@ GitHub-hosted runner timing varies. These runs are observations, not a controlle
 
 Caching is useful for repeated dependency installation; matrices help test several CI variants. Reusable workflows help teams maintain repeated CI logic, and a prepare job can simplify cache ownership in larger matrices.
 
-These techniques can be less useful for tiny projects, very fast or rarely installed dependencies, or a small matrix where the prepare delay costs more than it saves. Cache invalidation complexity can also outweigh the benefit. Caching speeds dependency retrieval, not necessarily extraction, installation scripts, linting, testing, or bundling; tiny repositories may show small timing differences.
+These techniques can be less useful for tiny projects, very fast or rarely installed dependencies, or a small matrix where the prepare delay costs more than it saves. Cache invalidation complexity can also outweigh the benefit. Caching speeds dependency retrieval, not necessarily extraction, installation scripts, linting, testing, or bundling; tiny repositories may show small timing differences. These techniques may therefore be of more use to teams of software engineers working on larger projects rather than a single hobbyist working on a small application.
 
 Shared workflow changes affect all callers that pick up the changed reference. For workflows handling untrusted contributions or credentials, consider cache read/write trust carefully and never cache secrets: readable cache contents can be extracted, and untrusted writes can poison later runs. [Cache security guidance](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#best-practices-for-using-caches-securely).
 
