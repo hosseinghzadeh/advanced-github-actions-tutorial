@@ -56,6 +56,8 @@ flowchart LR
 
 For this tutorial, standard `ubuntu-latest` runners are available free for public repositories. Each job gets a fresh virtual machine, so installed dependencies do not carry over automatically. [GitHub-hosted runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
+GitHub Runners are temporary machines which are spun up when needed. The cache is stored outside of these temporary machines, and is restored with a key. Job order control is necessary to configure, but once everything is done the reusable workflows let different callers use the same CI implementation which hopefully increases efficiency.
+
 ## Setup
 
 1. On the repository page, click **Use this template → Create a new repository**. [Template repository instructions](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
