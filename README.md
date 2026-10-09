@@ -257,7 +257,7 @@ See the official [dependency caching reference](https://docs.github.com/en/actio
 
 **What:** Run the same CI checks on Node.js 22, 24, and 26, all on `ubuntu-latest`.
 
-**Why:** A passing run on one runtime does not prove the app and toolchain work on the others. `strategy.matrix` expands one job definition into three jobs. `fail-fast: false` lets the other matrix jobs continue if one fails. [Matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations).
+**Why:** A passing run on one runtime does not prove the app and toolchain work on the others. `strategy.matrix` expands one job definition into three jobs. `fail-fast: false` lets the other matrix jobs continue if one fails. [Matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations). (Note: we vary Node.js versions 22, 24 and 26 on one OS in this tutorial. Multi-OS testing is left out of scope, and thus the cache remains OS specific.)
 
 **Do:** In the Step 1 file, add `strategy` immediately below `build`'s `runs-on`:
 
