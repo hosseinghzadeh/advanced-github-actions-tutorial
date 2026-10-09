@@ -56,7 +56,7 @@ flowchart LR
 
 For this tutorial, standard `ubuntu-latest` runners are available free for public repositories. Each job gets a fresh virtual machine, so installed dependencies do not carry over automatically. [GitHub-hosted runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
-GitHub Runners are temporary machines which are spun up when needed. The cache is stored outside of these temporary machines, and is restored with a key. Job order control is necessary to configure, but once everything is done the reusable workflows let different callers use the same CI implementation which hopefully increases efficiency.
+GitHub-hosted runners are temporary machines created for individual jobs. The cache is stored outside those runners and restored using a cache key, so dependency downloads can be reused across jobs and runs. Job dependencies such as `needs` control execution order, while reusable workflows let different callers share the same CI implementation without duplicating steps.
 
 ## Setup
 
@@ -257,7 +257,7 @@ See the official [dependency caching reference](https://docs.github.com/en/actio
 
 **What:** Run the same CI checks on Node.js 22, 24, and 26, all on `ubuntu-latest`.
 
-**Why:** A passing run on one runtime does not prove the app and toolchain work on the others. `strategy.matrix` expands one job definition into three jobs. `fail-fast: false` lets the other matrix jobs continue if one fails. [Matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations). (Note: we vary Node.js versions 22, 24 and 26 on one OS in this tutorial. Multi-OS testing is left out of scope, and thus the cache remains OS specific.)
+**Why:** A passing run on one runtime does not prove the app and toolchain work on the others. `strategy.matrix` expands one job definition into three jobs. `fail-fast: false` lets the other matrix jobs continue if one fails. [Matrix strategy](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations). This tutorial varies Node.js versions 22, 24, and 26 on a single operating system. Multi-OS testing is intentionally out of scope, and the cache remains OS-specific.
 
 **Do:** In the Step 1 file, add `strategy` immediately below `build`'s `runs-on`:
 
@@ -519,7 +519,7 @@ GitHub-hosted runner timing varies. These runs are observations, not a controlle
 
 Caching is useful for repeated dependency installation; matrices help test several CI variants. Reusable workflows help teams maintain repeated CI logic, and a prepare job can simplify cache ownership in larger matrices.
 
-These techniques can be less useful for tiny projects, very fast or rarely installed dependencies, or a small matrix where the prepare delay costs more than it saves. Cache invalidation complexity can also outweigh the benefit. Caching speeds dependency retrieval, not necessarily extraction, installation scripts, linting, testing, or bundling; tiny repositories may show small timing differences. These techniques may therefore be of more use to teams of software engineers working on larger projects rather than a single hobbyist working on a small application.
+These techniques can be less useful for tiny projects, very fast or rarely installed dependencies, or a small matrix where the prepare delay costs more than it saves. Cache invalidation complexity can also outweigh the benefit. Caching speeds dependency retrieval, not necessarily extraction, installation scripts, linting, testing, or bundling; tiny repositories may show small timing differences. These techniques are generally more valuable for teams that run CI frequently, maintain larger dependency sets, or share CI logic across repositories, while the benefit is smaller for tiny single-developer projects.
 
 Shared workflow changes affect all callers that pick up the changed reference. For workflows handling untrusted contributions or credentials, consider cache read/write trust carefully and never cache secrets: readable cache contents can be extracted, and untrusted writes can poison later runs. [Cache security guidance](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#best-practices-for-using-caches-securely).
 
