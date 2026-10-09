@@ -20,6 +20,10 @@ Fresh CI runners repeatedly retrieve dependencies. Start with a basic build, add
 
 The app summarizes `[2, 4, 6, 8]` and prints `{"count":4,"sum":20,"mean":5,"min":2,"max":8}`. TypeScript checks types separately; Webpack produces `app/dist/bundle.js`. The app makes no network requests; dependency installation retrieves packages from npm.
 
+## Relevance to DevOps
+
+Continuous integration only works if feedback is fast and the pipeline stays maintainable. This tutorial covers three practices that support that: **caching** shortens the feedback loop by avoiding repeated downloads, **matrix builds** test several runtimes in parallel so problems are found before they reach users, and **reusable workflows** treat pipeline configuration as shared, version-controlled code instead of copy-pasted YAML. Together they show the DevOps principles of automation, fast feedback and reducing duplicated work in a concrete, hands-on pipeline.
+
 ## Architecture overview
 
 Basic caching keeps downloads between otherwise fresh runners:
