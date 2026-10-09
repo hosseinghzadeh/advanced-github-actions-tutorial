@@ -100,7 +100,7 @@ jobs:
       - name: Setup Node.js 24
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: '24'
           package-manager-cache: false
 
       - name: Install dependencies
@@ -177,7 +177,7 @@ jobs:
       - name: Setup Node.js 24
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: '24'
           package-manager-cache: false
 
       - name: Get npm cache directory
@@ -262,40 +262,40 @@ See the official [dependency caching reference](https://docs.github.com/en/actio
 **Do:** In the Step 1 file, add `strategy` immediately below `build`'s `runs-on`:
 
 ```yaml
-strategy:
-  fail-fast: false
-  matrix:
-    node-version: [22, 24, 26]
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24, 26]
 ```
 
 Rename the setup step to `Setup Node.js` and replace its `with` section:
 
 ```yaml
-with:
-  node-version: ${{ matrix.node-version }}
-  package-manager-cache: false
+        with:
+          node-version: ${{ matrix.node-version }}
+          package-manager-cache: false
 ```
 
 Initially keep **separate per-cell caches**. Replace the cache key and restore prefix:
 
 ```yaml
-key: ${{ runner.os }}-npm-node-${{ matrix.node-version }}-${{ hashFiles('app/package-lock.json') }}
-restore-keys: |
-  ${{ runner.os }}-npm-node-${{ matrix.node-version }}-
+          key: ${{ runner.os }}-npm-node-${{ matrix.node-version }}-${{ hashFiles('app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-node-${{ matrix.node-version }}-
 ```
 
 In `Write timing summary`, add `NODE_VERSION` beside the existing `CACHE_STATUS` environment variable:
 
 ```yaml
-env:
-  NODE_VERSION: ${{ matrix.node-version }}
-  CACHE_STATUS: ${{ steps.cache-npm.outputs.cache-hit == 'true' && 'Hit' || 'Miss' }}
+        env:
+          NODE_VERSION: ${{ matrix.node-version }}
+          CACHE_STATUS: ${{ steps.cache-npm.outputs.cache-hit == 'true' && 'Hit' || 'Miss' }}
 ```
 
 Replace only the summary's data-row echo with:
 
 ```yaml
-echo "| build (Node $NODE_VERSION) | $CACHE_STATUS | ${INSTALL_DURATION:-Not completed} | $total_duration seconds |"
+            echo "| build (Node $NODE_VERSION) | $CACHE_STATUS | ${INSTALL_DURATION:-Not completed} | $total_duration seconds |"
 ```
 
 Keep every existing install, lint, typecheck, test, build, and start step. Commit and run CI.
@@ -311,9 +311,9 @@ Keep every existing install, lint, typecheck, test, build, and start step. Commi
 **Do:** Replace the combined cache step's key and restore prefix:
 
 ```yaml
-key: ${{ runner.os }}-npm-${{ hashFiles('app/package-lock.json') }}
-restore-keys: |
-  ${{ runner.os }}-npm-
+          key: ${{ runner.os }}-npm-${{ hashFiles('app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 ```
 
 Commit and run CI. To observe a **cold** cache, wait for earlier CI runs to finish, open **Actions → Caches** in your own tutorial repository, and delete entries starting with `Linux-npm-`. This also removes older fallback entries. Then start a **new CI run** through **Actions → CI → Run workflow** and inspect that new run as your cold-cache observation. [Managing caches](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manage-caches).
@@ -322,11 +322,11 @@ Commit and run CI. To observe a **cold** cache, wait for earlier CI runs to fini
 
 **Our real cold shared-cache run:**
 
-| Job     | Cache | Install duration | Total duration |
-| ------- | ----- | ---------------- | -------------- |
-| Node 22 | Miss  | 3s               | 11s            |
-| Node 24 | Miss  | 4s               | 13s            |
-| Node 26 | Miss  | 4s               | 19s            |
+| Job | Cache | Install duration | Total duration |
+| --- | --- | --- | --- |
+| Node 22 | Miss | 3s | 11s |
+| Node 24 | Miss | 4s | 13s |
+| Node 26 | Miss | 4s | 19s |
 
 **No cache-save conflict warning was observed.** These measurements show simultaneous misses; they do not demonstrate an observed save conflict.
 
@@ -339,27 +339,27 @@ Commit and run CI. To observe a **cold** cache, wait for earlier CI runs to fini
 **Do:** Replace `.github/workflows/ci.yml` with the complete [final Step 2 snapshot](solutions/step-2-matrix/ci.yml). Keep all timing summaries. The prepare job uses Node.js 24 with automatic caching disabled and implements these operations:
 
 ```yaml
-- name: Restore npm downloads
-  id: cache-npm
-  uses: actions/cache/restore@v6
-  with:
-    path: ${{ steps.npm-cache.outputs.dir }}
-    key: ${{ runner.os }}-npm-${{ hashFiles('app/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-npm-
+      - name: Restore npm downloads
+        id: cache-npm
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
-- name: Install dependencies
-  run: |
-    install_start=$(date +%s)
-    npm ci
-    echo "INSTALL_DURATION=$(( $(date +%s) - install_start )) seconds" >> "$GITHUB_ENV"
+      - name: Install dependencies
+        run: |
+          install_start=$(date +%s)
+          npm ci
+          echo "INSTALL_DURATION=$(( $(date +%s) - install_start )) seconds" >> "$GITHUB_ENV"
 
-- name: Save npm downloads
-  if: steps.cache-npm.outputs.cache-hit != 'true'
-  uses: actions/cache/save@v6
-  with:
-    path: ${{ steps.npm-cache.outputs.dir }}
-    key: ${{ steps.cache-npm.outputs.cache-primary-key }}
+      - name: Save npm downloads
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ steps.cache-npm.outputs.cache-primary-key }}
 ```
 
 These are excerpts from `prepare.steps`; use the snapshot for checkout, setup, cache-directory discovery, and timing. The save uses the restore action's resolved **primary key**, not a fallback key. Saving is conditional on no exact hit and on preceding steps succeeding.
@@ -367,13 +367,13 @@ These are excerpts from `prepare.steps`; use the snapshot for checkout, setup, c
 The matrix job begins:
 
 ```yaml
-build:
-  needs: prepare
-  runs-on: ubuntu-latest
-  strategy:
-    fail-fast: false
-    matrix:
-      node-version: [22, 24, 26]
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24, 26]
 ```
 
 Its cache step uses `actions/cache/restore@v6` with the same shared key and prefix. It has no save step. Every matrix job still runs `npm ci`, lint, typecheck, tests, build, and start. The explicit [restore](https://github.com/actions/cache/tree/v6/restore) and [save](https://github.com/actions/cache/tree/v6/save) actions separate those responsibilities.
@@ -382,12 +382,12 @@ Commit and run CI. For a cold-run observation, clear your own tutorial cache as 
 
 **Expect:** `prepare` finishes first, then the three matrix jobs fan out. Our validated cold run produced:
 
-| Job     | Cache | Install duration | Total duration |
-| ------- | ----- | ---------------- | -------------- |
-| prepare | Miss  | 8s               | 11s            |
-| Node 22 | Hit   | 3s               | 12s            |
-| Node 24 | Hit   | 4s               | 17s            |
-| Node 26 | Hit   | 3s               | 19s            |
+| Job | Cache | Install duration | Total duration |
+| --- | --- | --- | --- |
+| prepare | Miss | 8s | 11s |
+| Node 22 | Hit | 3s | 12s |
+| Node 24 | Hit | 4s | 17s |
+| Node 26 | Hit | 3s | 19s |
 
 This assumes the save succeeds and the cache remains available; restore-only jobs can still install if it is unavailable. A prepare job introduces serial latency before fan-out, so it is not always the best trade-off for a very small matrix. Matrix **Total duration** excludes time waiting for `prepare`; compare the whole run's timeline separately.
 
@@ -442,13 +442,13 @@ A second caller can use identical CI logic without copying build steps. Reusable
    on:
      workflow_dispatch:
      schedule:
-       - cron: "17 2 * * *"
+       - cron: '17 2 * * *'
 
    jobs:
      nightly:
        uses: ./.github/workflows/reusable-ci.yml
        with:
-         node-version: "24"
+         node-version: '24'
    ```
 
 4. Commit the files and run **Actions → CI → Run workflow**, then **Actions → Nightly CI → Run workflow**. Inspect their summaries and the app's JSON output.
@@ -459,11 +459,11 @@ CI runs prepare followed by three reusable build invocations. Nightly runs only 
 
 For a workflow in another repository, the syntax is `owner/repository/.github/workflows/reusable-ci.yml@ref`. Production consumers should choose an appropriate immutable reference, preferably a commit SHA when strong immutability is required; branch and movable tag references can change. Our local reference selects the reusable workflow from the caller's commit. [Calling a reusable workflow](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#calling-a-reusable-workflow).
 
-| Approach          | Reuses              | Practical difference                                            |
-| ----------------- | ------------------- | --------------------------------------------------------------- |
+| Approach | Reuses | Practical difference |
+| --- | --- | --- |
 | Reusable workflow | Full workflows/jobs | Owns jobs and runners; accepts inputs and secrets when declared |
-| Composite action  | A sequence of steps | Runs inside the caller's job                                    |
-| Copy-paste        | Repeated YAML text  | Simplest initially, but leaves the most maintenance duplication |
+| Composite action | A sequence of steps | Runs inside the caller's job |
+| Copy-paste | Repeated YAML text | Simplest initially, but leaves the most maintenance duplication |
 
 See GitHub's [comparison of reusable configurations](https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations).
 
@@ -471,35 +471,35 @@ See GitHub's [comparison of reusable configurations](https://docs.github.com/en/
 
 Record your own results from the job summaries. Copy additional rows into your notes for each matrix version and prepare job; you can edit this table through github.com if desired.
 
-| Scenario                        | Cache       | Install duration | Total duration |
-| ------------------------------- | ----------- | ---------------- | -------------- |
-| Baseline                        | Not enabled |                  |                |
-| Cached first run                | Miss        |                  |                |
-| Cached second run               | Hit         |                  |                |
-| Per-cell matrix, Node \_\_\_    |             |                  |                |
-| Shared matrix, Node \_\_\_      |             |                  |                |
-| Centralized prepare             |             |                  |                |
-| Centralized matrix, Node \_\_\_ |             |                  |                |
+| Scenario | Cache | Install duration | Total duration |
+| --- | --- | --- | --- |
+| Baseline | Not enabled | | |
+| Cached first run | Miss | | |
+| Cached second run | Hit | | |
+| Per-cell matrix, Node ___ | | | |
+| Shared matrix, Node ___ | | | |
+| Centralized prepare | | | |
+| Centralized matrix, Node ___ | | | |
 
 ### Our real measured examples
 
 These are examples from real runs in this repository, not predictions for your run.
 
-| Scenario                         | Job     | Cache       | Install duration | Total duration |
-| -------------------------------- | ------- | ----------- | ---------------- | -------------- |
-| Baseline                         | build   | Not enabled | 6s               | 17s            |
-| First explicit-cache run         | build   | Miss        | 5s               | 12s            |
-| Second identical cached run      | build   | Hit         | 4s               | 15s            |
-| Step 2a: per-cell matrix         | Node 22 | Miss        | 7s               | 21s            |
-| Step 2a: per-cell matrix         | Node 24 | Hit         | 5s               | 16s            |
-| Step 2a: per-cell matrix         | Node 26 | Miss        | 6s               | 21s            |
-| Step 2b: cold naive shared cache | Node 22 | Miss        | 3s               | 11s            |
-| Step 2b: cold naive shared cache | Node 24 | Miss        | 4s               | 13s            |
-| Step 2b: cold naive shared cache | Node 26 | Miss        | 4s               | 19s            |
-| Step 2c: cold centralized cache  | prepare | Miss        | 8s               | 11s            |
-| Step 2c: cold centralized cache  | Node 22 | Hit         | 3s               | 12s            |
-| Step 2c: cold centralized cache  | Node 24 | Hit         | 4s               | 17s            |
-| Step 2c: cold centralized cache  | Node 26 | Hit         | 3s               | 19s            |
+| Scenario | Job | Cache | Install duration | Total duration |
+| --- | --- | --- | --- | --- |
+| Baseline | build | Not enabled | 6s | 17s |
+| First explicit-cache run | build | Miss | 5s | 12s |
+| Second identical cached run | build | Hit | 4s | 15s |
+| Step 2a: per-cell matrix | Node 22 | Miss | 7s | 21s |
+| Step 2a: per-cell matrix | Node 24 | Hit | 5s | 16s |
+| Step 2a: per-cell matrix | Node 26 | Miss | 6s | 21s |
+| Step 2b: cold naive shared cache | Node 22 | Miss | 3s | 11s |
+| Step 2b: cold naive shared cache | Node 24 | Miss | 4s | 13s |
+| Step 2b: cold naive shared cache | Node 26 | Miss | 4s | 19s |
+| Step 2c: cold centralized cache | prepare | Miss | 8s | 11s |
+| Step 2c: cold centralized cache | Node 22 | Hit | 3s | 12s |
+| Step 2c: cold centralized cache | Node 24 | Hit | 4s | 17s |
+| Step 2c: cold centralized cache | Node 26 | Hit | 3s | 19s |
 
 GitHub-hosted runner timing varies. These runs are observations, not a controlled benchmark: checkout, Node setup, cache transfer, and other work influence total time. Do not infer a guaranteed speedup or compare a matrix job's duration directly with the whole workflow's elapsed time. No cache-save conflict warning was observed in our Step 2b run.
 
@@ -527,13 +527,13 @@ Reflect on your observations: Which duration changed? Would you keep prepare for
 
 ## Troubleshooting + solutions
 
-| Problem                            | Check in the browser                                                                                                                                                                                                            |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Workflow does not appear           | File is under `.github/workflows/`, YAML is valid, and changes are committed. For a manual run, the workflow must exist on the default branch and include `workflow_dispatch`. On a fork, enable Actions if prompted.           |
-| Cache always misses                | Read the cache logs: compare OS, lockfile hash, path/version, and branch scope. Confirm a previous save succeeded. Retention or eviction can remove entries. Fallback restoration still displays Miss.                          |
-| npm ci fails                       | Open the install log. Check that `app/package.json` and `app/package-lock.json` match and commands run in `app/`. For this tutorial, restore both supplied app files through the browser rather than hand-editing the lockfile. |
-| Reusable workflow cannot be called | Confirm `workflow_call`, the `.github/workflows/` file location, and a job-level `uses` reference. Create the reusable file before committing a caller that references it.                                                      |
-| Matrix value/input type issue      | Keep the input `type: string` and pass `${{ format('{0}', matrix.node-version) }}`; for nightly use the quoted string `'24'`.                                                                                                   |
+| Problem | Check in the browser |
+| --- | --- |
+| Workflow does not appear | File is under `.github/workflows/`, YAML is valid, and changes are committed. For a manual run, the workflow must exist on the default branch and include `workflow_dispatch`. On a fork, enable Actions if prompted. |
+| Cache always misses | Read the cache logs: compare OS, lockfile hash, path/version, and branch scope. Confirm a previous save succeeded. Retention or eviction can remove entries. Fallback restoration still displays Miss. |
+| npm ci fails | Open the install log. Check that `app/package.json` and `app/package-lock.json` match and commands run in `app/`. For this tutorial, restore both supplied app files through the browser rather than hand-editing the lockfile. |
+| Reusable workflow cannot be called | Confirm `workflow_call`, the `.github/workflows/` file location, and a job-level `uses` reference. Create the reusable file before committing a caller that references it. |
+| Matrix value/input type issue | Keep the input `type: string` and pass `${{ format('{0}', matrix.node-version) }}`; for nightly use the quoted string `'24'`. |
 
 Reference solution snapshots:
 
